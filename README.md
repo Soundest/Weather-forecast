@@ -6,11 +6,12 @@ A website containing the weather forecast for the week using a weather api. This
 
 ### Screenshot of deployed Website:
 
-
+assets/images/Screenshot-of-deployed-application.png
 
 ### Link to deployed application:
 
-
+https://soundest.github.io/Weather-forecast/
 
 ### Link to Github Repository
 
+https://github.com/Soundest/Weather-forecast
