@@ -1,6 +1,6 @@
 ## Application purpose
 
-A website containing the weather forecast for the week using a weather api. This project includes the HTML, CSS and JavaScript needed to view and operate the website as intended.
+A website containing the weather forecast for the week using a weather api to collect the relevant data. The website functions by typing the name of a city into the search bar and recieving the weather forecast for the week by clicking search. A search history is shown to navigate through previous search results. This project includes the HTML, CSS and JavaScript needed to view and operate the website as intended.
 
 ## References
 
