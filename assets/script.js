@@ -9,17 +9,24 @@ function handleFormSubmit(event) {
     fetchWeatherData(city);
   }
   
-
   function fetchWeatherData(city) {
     const apiKey = '7ab15fde54a0413ab7c80036230307';
-    const apiUrl = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`; 
+    const currentWeatherUrl = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
+    const forecastUrl = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=5`;
   
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(data => {
-        updateCurrentWeather(data.current);
-        updateForecast(data.forecast);
-        addToSearchHistory(city);
+    Promise.all([fetch(currentWeatherUrl), fetch(forecastUrl)])
+      .then(([currentWeatherResponse, forecastResponse]) => {
+        return Promise.all([currentWeatherResponse.json(), forecastResponse.json()]);
+      })
+      .then(([currentData, forecastData]) => {
+        console.log(currentData, forecastData);
+        if (currentData.current && forecastData.forecast) {
+          updateCurrentWeather(currentData.current);
+          updateForecast(forecastData.forecast);
+          addToSearchHistory(city, currentData, forecastData);
+        } else {
+          console.log('Invalid API response:', currentData, forecastData);
+        }
       })
       .catch(error => {
         console.log('Error fetching weather data:', error);
@@ -27,9 +34,7 @@ function handleFormSubmit(event) {
   }
   
   function updateCurrentWeather(currentData) {
-    // Update the city name, date, weather icon, temperature, humidity, and wind speed
-  
-    // Example code:
+    console.log(currentData);
     const cityNameElement = document.getElementById('city-name');
     const dateElement = document.getElementById('date');
     const weatherIconElement = document.getElementById('weather-icon');
@@ -37,10 +42,15 @@ function handleFormSubmit(event) {
     const humidityElement = document.getElementById('humidity');
     const windSpeedElement = document.getElementById('wind-speed');
   
-    // Example usage:
-    cityNameElement.textContent = currentData.location.name;
+    if (currentData.location && currentData.location.name) {
+      cityNameElement.textContent = currentData.location.name;
+    } else {
+      const cityInput = document.getElementById('city-input');
+      cityNameElement.textContent = cityInput.value.trim();
+    }
+  
     dateElement.textContent = getCurrentDate();
-    weatherIconElement.innerHTML = `<img src="${currentData.condition.icon}" alt="${currentData.condition.text}">`;
+    weatherIconElement.innerHTML = `<img src="https:${currentData.condition.icon}" alt="${currentData.condition.text}">`;
     temperatureElement.textContent = `${currentData.temp_c}°C`;
     humidityElement.textContent = `Humidity: ${currentData.humidity}%`;
     windSpeedElement.textContent = `Wind Speed: ${currentData.wind_kph} km/h`;
@@ -50,7 +60,7 @@ function handleFormSubmit(event) {
     const forecastElement = document.getElementById('forecast');
     forecastElement.innerHTML = '';
   
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < forecastData.forecastday.length; i++) {
       const forecastDayElement = document.createElement('div');
       forecastDayElement.classList.add('forecast-day');
   
@@ -63,7 +73,7 @@ function handleFormSubmit(event) {
   
       const weatherIconElement = document.createElement('div');
       weatherIconElement.classList.add('weather-icon');
-      weatherIconElement.innerHTML = `<img src="${forecastDayData.day.condition.icon}" alt="${forecastDayData.day.condition.text}">`;
+      weatherIconElement.innerHTML = `<img src="https:${forecastDayData.day.condition.icon}" alt="${forecastDayData.day.condition.text}">`;
       forecastDayElement.appendChild(weatherIconElement);
   
       const temperatureElement = document.createElement('div');
@@ -85,21 +95,41 @@ function handleFormSubmit(event) {
     }
   }
   
-  
-  function addToSearchHistory(city) {
-    // Add the city to the search history list
-  
-    // Example code:
+  function addToSearchHistory(city, currentData, forecastData) {
     const historyListElement = document.getElementById('history-list');
     const listItemElement = document.createElement('li');
     listItemElement.textContent = city;
   
     historyListElement.appendChild(listItemElement);
   
-    listItemElement.addEventListener('click', function() {
-      fetchWeatherData(city);
+    const cities = JSON.parse(localStorage.getItem('searchHistory')) || [];
+    cities.push({ city, currentData, forecastData });
+    localStorage.setItem('searchHistory', JSON.stringify(cities));
+  
+    listItemElement.addEventListener('click', function () {
+      updateCurrentWeather(currentData.current);
+      updateForecast(forecastData.forecast);
     });
   }
+  
+  function loadSearchHistory() {
+    const cities = JSON.parse(localStorage.getItem('searchHistory')) || [];
+    const historyListElement = document.getElementById('history-list');
+  
+    cities.forEach(function (item) {
+      const city = item.city;
+      const listItemElement = document.createElement('li');
+      listItemElement.textContent = city;
+      historyListElement.appendChild(listItemElement);
+  
+      listItemElement.addEventListener('click', function () {
+        updateCurrentWeather(item.currentData.current);
+        updateForecast(item.forecastData.forecast);
+      });
+    });
+  }
+  
+  loadSearchHistory();
   
   const searchForm = document.getElementById('search-form');
   searchForm.addEventListener('submit', handleFormSubmit);
@@ -109,3 +139,4 @@ function handleFormSubmit(event) {
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     return currentDate.toLocaleDateString(undefined, options);
   }
+  
